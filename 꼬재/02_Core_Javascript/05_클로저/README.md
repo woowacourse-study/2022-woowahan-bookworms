@@ -216,3 +216,103 @@ outer = null; // outer 식별자의 inner 함수 참조를 끊는다.
   document.body.appendChild(button);
 });
 ```
+
+<br /><br />
+
+## 03. 클로저 활용 사례
+
+---
+
+### 5-3-1 콜백 함수 내부에서 외부 데이터를 사용하고자 할 때
+
+---
+
+#### 자바스크립트의 대표적인 콜백함수인 이벤트 리스너에 관한 예시
+
+---
+
+```javascript
+var fruits = ["apple", "banana", "peach"];
+var $ul = document.createElement("ul");
+
+fruits.forEach(function (fruit) {
+  var $li = document.createElement("li");
+  $li.innerText = fruit;
+
+  $li.addEventListener("click", function () {
+    alert(`your choice is ${fruit}`);
+  });
+
+  $ul.appendChild($li);
+});
+
+document.body.appendChild($ul);
+```
+
+- forEach문 안의 익명의 콜백함수(이후 forEach 콜백함수라 작성) 내부에서 참조하는 외부 변수가 존재하지 않기 때문에 클로저가 아닙니다.
+
+- addEventListener 안의 익명의 콜백함수(이후 이벤트 콜백함수라 작성) 내부에서는 외부 변수 fruit을 참조하고 있기 때문에 클로저 입니다.
+
+forEach 콜백함수는 fruits의 개수만큼 실행되며, 그때마다 새로운 실행 컨텍스트가 활성화 됩니다.
+
+forEach 콜백함수의 실행 종료 여부와는 무관하게 클릭 이벤트에 의해 각 컨텍스트의 이벤트 콜백함수가 실행될 때는 이벤트 콜백함수의 outerEnvironmentReference가 forEach 콜백함수의 LexicalEnvironment를 참조하게 됩니다.
+
+따라서 최소한 이벤트 콜백함수가 참조할 예정인 변수 fruit에 대해서는 forEach 콜백함수가 종료된 후에도 가비지 컬렉터의 대상에서 제외되어 계속 참조가 가능해집니다.
+
+#### 이벤트 콜백함수의 분리
+
+---
+
+```javascript
+var alertFruits = function (fruit) {
+  alert(`your choice is ${fruit}`);
+};
+
+fruits.forEach(function (fruit) {
+  var $li = document.createElement("li");
+  $li.innerText = fruit;
+
+  $li.addEventListener("click", alertFruits.bind(null, fruit));
+  $ul.appendChild($li);
+});
+
+document.body.appendChild($ul);
+```
+
+이전 예제에서 이벤트 콜백함수가 반복적으로 생성되는 것을 방지하기 위해 이벤트 콜백함수를 공통 함수 alertFruits로 분리 후 bind 첫번째 인자는 null, 두 번째 인자는 fruit을 넘겨주었습니다.
+
+bind를 하지 않고 alertFruits만 넘겨줄 경우 alertFruits의 인자인 fruit에는 event 객체가 담겨 있게 됩니다.
+
+하지만 여기에서 문제는 이벤트 객체가 인자로 넘어오는 순서가 바뀌는 점 및 함수 내부에서의 this가 달라지는 상황을 감안해야합니다.
+
+여기서 고차함수를 활용하면 위 문제를 해결할 수 있다.
+
+#### 고차 함수로 분리
+
+---
+
+```javascript
+var fruits = ["a", "b", "c"];
+
+var alertFruitBuilder = function (fruit) {
+  return function () {
+    alert(`your choice is ${fruit}`);
+  };
+};
+
+fruits.forEach(function (fruit) {
+  var $li = document.createElement("li");
+  $li.innerText = fruit;
+
+  $li.addEventListener("click", alertFruitBuilder(fruit));
+  $ul.appendChild($li);
+});
+
+document.body.appendChild($ul);
+```
+
+alertFruitBuilder 함수는 내부에서 다시 익명함수를 return 하는데 이 익명함수가 기존의 alertFruit 함수입니다.
+
+이렇게 고차함수로 작성하게 되면 bind의 문제점을 해결할 수 있고 클로저를 통해 fruit의 변수도 outerEnvironmentReference에 의해 참조할 수 있게 됩니다. 즉 alertFruitBuilder의 실행 결과로 반환된 함수에는 클로저가 존재합니다.
+
+<br /><br />

@@ -126,3 +126,76 @@ obj2 = { c: 20, d: "ddd" };
 ```
 
 즉, 참조형 데이터가 '가변값'이라고 설명할 대의 '가변'은 참조형 데이터 자체를 변경할 경우가 아니라 그 내부의 프로퍼티를 변경할 때만 성립됩니다.
+
+## 05. 불변 객체
+
+---
+
+불변 객체가 필요한 이유?
+
+- 값으로 전달받은 객체에 변경을 가하더라도 원본 객체는 변하지 않아야 하는 경우 불변 객체가 필요
+
+얕은 복사와 깊은 복사
+
+- 얕은 복사(shallow copy) : 바로 아래 단계의 값만 복사하는 방법
+
+- 얕은 복사된 객체를 반환하는 함수 예제 코드
+
+  ```js
+  var copyObject = function (target) {
+    var result = {};
+
+    for (var prop in target) {
+      result[prop] = target[prop];
+    }
+
+    return result;
+  };
+  ```
+
+- 깊은 복사(deep copy) : 내부의 모든 값들을 하나하나 찾아서 전부 복사하는 방법
+
+  - 객체의 프로퍼티 중에서 그 값이 기본형 데이터일 경우에는 그대로 복사하면 되지만 참조형 데이터는 다시 그 내부의 프로퍼티들을 복사해야한다.
+
+- 깊은 복사된 객체를 반환하는 함수 예제 코드 (도서에 나온 코드가 뭔가 이상하여 다른 블로그를 통해 발취)
+
+  > 참고 블로그 : [박준우 블로그](https://junwoo45.github.io/2019-09-23-deep_clone/)
+
+  ```js
+  const copyObjectDeep = function (target) {
+    if (target === null || typeof target !== "object") {
+      return target;
+    }
+
+    const result = Array.isArray(target) ? [] : {};
+
+    for (let key of Object.keys(target)) {
+      result[key] = copyObjectDeep(target[key]);
+    }
+
+    return result;
+  };
+  ```
+
+<br />
+
+## 06. undefined와 null
+
+---
+
+자바스크립트에서 '없음'을 나타내는 값
+
+- null
+- undefined
+
+### null
+
+사용자가 명시적으로 "없음"을 표현하기 위해 대입한 값입니다.
+
+null은 typeof가 object라는 점을 주의해야 합니다.
+
+### undefined
+
+어떤 변수에 값이 존재하지 않을 경우를 의미합니다.
+
+사용자가 없음을 표현하기 위해 명시적으로 undefined를 대입하는 것은 지양하는 것이 좋다.

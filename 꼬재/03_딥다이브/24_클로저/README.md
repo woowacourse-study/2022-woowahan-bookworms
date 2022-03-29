@@ -98,3 +98,132 @@ innerFunc(); // 4 -> 10
 5. 중첩 함수 inner는 외부 함수 outer 보다 더 오래 생존했다. 이때 외부 함수보다 더 오래 생존한 중첩 함수는 외부 함수의 생존 여부(실행 컨텍스트의 생존 여부)와는 상관없이 자신이 정의된 위치에 의해 결정된 상위 스코프를 기억한다. 이처럼 중첩 함수 inner의 내부에서는 상위 스코프를 참조할 수 있으므로 상위 스코프의 식별자를 참조할 수 있고 식별자의 값을 변경할 수도 있다.
 
 이러한 현상을 클로저라고 한다.
+
+## 24.4 클로저의 활용
+
+---
+
+클로저는 상태(state)가 의도치 않게 변경되지 않도록 안전하게 은닉(information hiding)하고 특정 함수에게만 상태 변경을 허용하여 상태를 언전하게 변경하고 유지하기 위해 사용한다.
+
+```js
+const increase = (function () {
+  // 카운트 상태 변수
+  let num = 0;
+
+  return function () {
+    // 카운트 상태를 1만큼 증가시킨다.
+    return ++num;
+  };
+})();
+
+console.log(increase()); // 1
+console.log(increase()); // 2
+console.log(increase()); // 3
+```
+
+즉시 실행 함수가 반환한 클로저는 카운트 상태를 유지하기 위한 자유 변수 num을 언제 어디서 호출하든지 참조하고 변경할 수 있다.
+또한, num 변수는 외부에서 직접 접근할 수 없는 은닉된 private 변수이므로 전역 변수를 사용했을 때와 같이 의도하지 않은 변경을 걱정할 필요가 없기 때문에 더 안정적인 프로그래밍이 가능하다.
+
+```js
+const counter = (function () {
+  let num = 0;
+
+  // 클로저인 메서드를 갖는 객체를 반환한다.
+  // 객체 리터럴은 스코프를 만들지 않는다.
+  // 따라서 아래 메서드들의 상위 스코프는 즉시 실행 함수의 렉시컬 환경이다.
+  return {
+    increase() {
+      return ++num;
+    },
+    decrease() {
+      return num > 0 ? --num : 0;
+    },
+  };
+})();
+
+console.log(counter.increase()); // 1
+console.log(counter.increase()); // 2
+
+console.log(counter.increase()); // 1
+console.log(counter.increase()); // 0
+```
+
+객체 리터럴의 중괄호는 코드 블록이 아니므로 별도의 스코프를 생성하지 않는다.
+increase, decrease 메서드가 언제 어디서 호출되든 상관없이 increase, decrease 함수는 즉시 실행 함수의 식별자를 참조할 수 있다.
+
+함수형 프로그래밍에서 클로저를 활용하는 간단한 예제
+
+```js
+// 함수를 인수로 전달받고 함수를 반환하는 고차 함수
+// 이 함수는 카운트 상태를 유지하기 위한 자유 변수 counter를 기억하는 클로저를 반환한다.
+function makeCounter(predicate) {
+  // 카운트 상태를 유지하기 위한 자유 변수
+  let counter = 0;
+
+  // 클로저를 반환
+  return function () {
+    // 인수로 전달받은 보조 함수에 상태 변경을 위임한다.
+    counter = predicate(counter);
+    return counter;
+  };
+}
+
+// 보조함수
+function increase(n) {
+  return ++n;
+}
+
+function decrease(n) {
+  return --n;
+}
+
+// 함수로 함수를 생성한다.
+// makeCounter 함수는 보조 함수를 인수로 전달받아 함수를 반환한다.
+const increaser = makeCounter(increase);
+console.log(increaser()); // 1
+console.log(increaser()); // 2
+
+const decreaser = makeCounter(decrease);
+console.log(decreaser()); // -1
+console.log(decreaser()); // -2
+```
+
+makeCounter 함수를 호출해 함수를 반환할 때 반환된 함수는 자신만의 독립된 렉시컬 환경을 갖는다.
+함수를 호출할 때마다 새로운 makeCounter 함수 실생 컨텍스트의 렉시컬 환경이 생성되기 때문이다.
+increaser와 decreaser는 각각 자신만의 독립된 렉시컬 환경을 갖기 때문에 카운트를 유지하기 위한 자유 변수 counter를 공유하지 않아 카운터의 증감이 연동되지 않는다.
+
+```js
+// 함수를 반환하는 고차함수
+// 이 함수는 카운트 상태를 유지하기 위한 자유 변수 counter를 기억하는 클로저를 반환한다.
+const counter = (function () {
+  // 카운트 상태를 유지하기 위한 자유 변수
+  let counter = 0;
+
+  // 함수를 인수로 전달받는 클로저를 반환
+  return function (predicate) {
+    // 인수로 전달받은 보조 함수에 상태 변경을 위임한다.
+    counter = predicate(counter);
+    return counter;
+  };
+})();
+
+// 보조 함수
+function increase(n) {
+  return ++n;
+}
+
+function decrease(n) {
+  return --n;
+}
+
+// 보조 함수를 전달하여 호출
+console.log(counter(increase)); // 1
+console.log(counter(increase)); // 2
+
+// 자유 변수를 공유 한다.
+console.log(counter(decrease)); // 1
+console.log(counter(decrease)); // 0
+```
+
+독립된 카운터가 아니라 연동하여 증감이 가능한 카운터를 만드려면 렉시컬 환경을 공유하는 클로저를 만들어야 한다.
+이를 위해서는 makeCounter 함수를 두 번 호출하지 않아야 한다.

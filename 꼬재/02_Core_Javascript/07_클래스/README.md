@@ -102,3 +102,68 @@ const Square = function (width) {
 
 이처럼 Square의 prototype에 상위 클래스인 Rectangle의 인스턴스를 부여하는 것으로 기본적인 메서드 상속은 가능하지만 다양한 문제가 발생할 여지가 있다.
 예를 들어, 생성자 함수를 가르키는 것이 Square가 아니라 Rectangle을 가리키는 점과 Square의 width값을 지우더라도, Rectangle의 width값을 참조할 수 있는 점이 있다.
+
+## 04. ES6의 클래스 및 클래스 상속
+
+---
+
+#### ES5
+
+```js
+var ES5 = function (name) {
+  this.name = name;
+};
+
+ES5.staticMethod = function () {
+  return `${this.name} staticMethod`;
+};
+
+ES5.prototype.method = function () {
+  return `${this.name} method`;
+};
+
+var es5Instance = new ES5("es5");
+console.log(ES5.staticMethod()); // es5 staticMethod
+console.log(es5Instance.method()); // es5 method
+```
+
+#### ES6
+
+```js
+var ES6 = class {
+  constructor(name) {
+    this.name = name;
+  }
+  static staticMethod() {
+    return `${this.name} staticMethod`;
+  }
+  method() {
+    return `${this.name} method`;
+  }
+};
+
+var es6Instance = new ES6("es6");
+console.log(ES6.staticMethod()); // es6 staticMethod
+console.log(es6Instance.method()); // es6 method
+```
+
+#### ES6 상속
+
+```js
+var Rectangle = class {
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+  }
+
+  getArea() {
+    return this.width + this.height;
+  }
+};
+
+var Square = class {
+  constructor(width) {
+    super(width, width);
+  }
+};
+```
